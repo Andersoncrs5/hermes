@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-@Getter
 public class Result<T> {
 
     private final T value;
