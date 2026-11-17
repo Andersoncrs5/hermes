@@ -4,6 +4,7 @@ package org.hermes.shared.api;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanContext;
+import org.hermes.shared.domain.page.Page;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -126,6 +127,27 @@ public record ResponseHTTP<T>(
         return new ResponseHTTP<>(
                 data, "Success", true,
                 null, null, null, null, pagination
+        );
+    }
+
+    public static <T> ResponseHTTP<List<T>> paginated(Page<T> page) {
+        return new ResponseHTTP<>(
+                page.getContent(), "Success", true,
+                null, null, null, null, page.toMeta()
+        );
+    }
+
+    public static <T> ResponseHTTP<List<T>> paginated(Page<T> page, String message) {
+        return new ResponseHTTP<>(
+                page.getContent(), message, true,
+                null, null, null, null, page.toMeta()
+        );
+    }
+
+    public static <T> ResponseHTTP<List<T>> paginated(Page<T> page, String traceId, String message) {
+        return new ResponseHTTP<>(
+                page.getContent(), message, true,
+                traceId, null, null, null, page.toMeta()
         );
     }
 
