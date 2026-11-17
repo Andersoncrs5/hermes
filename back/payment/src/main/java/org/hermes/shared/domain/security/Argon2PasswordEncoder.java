@@ -10,7 +10,7 @@ import java.security.SecureRandom;
 import java.util.Base64;
 
 @ApplicationScoped
-public class Argon2PasswordEncoder {
+public class Argon2PasswordEncoder implements PasswordEncoderPort {
 
     private static final int ITERATIONS = 3;
     private static final int MEMORY = 65536; // 64 MB
