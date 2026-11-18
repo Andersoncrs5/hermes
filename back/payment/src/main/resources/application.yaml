@@ -1,0 +1,68 @@
+quarkus:
+  banner:
+    enabled: false
+  http:
+    port: 8080
+    cors:
+      enabled: true
+      origins: "*"
+      methods: GET,POST,PUT,DELETE,PATCH,OPTIONS
+      headers: "*"
+  datasource:
+    db-kind: postgresql
+    jdbc:
+      url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:hermes}
+      max-size: 20
+      min-size: 5
+    username: ${POSTGRES_USER:hermes}
+    password: ${POSTGRES_PASSWORD:hermes_secret}
+  jooq:
+    dialect: POSTGRES
+  flyway:
+    migrate-at-start: true
+    locations: db/migrations
+    baseline-on-migrate: true
+  redis:
+    hosts: redis://${REDIS_HOST:localhost}:${REDIS_PORT:6379}
+  smallrye-jwt:
+    sign:
+      key:
+        location: privateKey.pem
+    verify:
+      key:
+        location: publicKey.pem
+      issuer: "https://hermes.io"
+    identity-claim: sub
+    group-claim: groups
+  smallrye-openapi:
+    path: /q/openapi
+  swagger-ui:
+    always-include: true
+    path: /q/swagger-ui
+
+mp:
+  jwt:
+    verify:
+      publickey:
+        location: publicKey.pem
+      issuer: "https://hermes.io"
+
+hermes:
+  security:
+    jwt:
+      issuer: "https://hermes.io"
+      audience: "hermes-api"
+      access-token-expiration-seconds: 900
+      refresh-token-expiration-seconds: 604800
+      session-inactivity-seconds: 86400
+  bootstrap:
+    enabled: ${HERMES_BOOTSTRAP_ENABLED:true}
+    master:
+      username: ${HERMES_MASTER_USERNAME:admin}
+      email: ${HERMES_MASTER_EMAIL:admin@hermes.io}
+      full-name: ${HERMES_MASTER_FULLNAME:System Master Admin}
+      password: ${HERMES_MASTER_PASSWORD:AdminMasterSecret123!}
+      roles:
+        - master
+        - admin
+        - user

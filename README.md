@@ -1,109 +1,195 @@
-# hermes
+# Hermes Payment — B2B Multi-tenant Payment Platform
 
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
+Plataforma B2B multi-tenant de pagamentos, projetada com isolamento lógico rigoroso por organização, autenticação robusta, autorização granular baseada em papéis e permissões (RBAC contextual) e arquitetura hexagonal / Clean Architecture.
 
-If you want to learn more about Quarkus, please visit its website: <https://quarkus.io/>.
+---
 
-## Running the application in dev mode
+## 1. Visão Geral e Estrutura do Monorepo
 
-You can run your application in dev mode that enables live coding using:
+O repositório está organizado segundo a arquitetura do ecossistema Hermes:
 
-```shell script
+```text
+/
+├── back/                      # Aplicações backend da plataforma
+│   └── payment/               # Backend principal Hermes Payment (Quarkus 3.40, JDK 27, jOOQ, Flyway)
+├── front/                     # Aplicações Web Frontend
+│   └── payment/               # Portal Web / Dashboard administrativo e operacional
+├── mobile/                    # Aplicativos Mobile
+│   └── paymentUI/             # Interface mobile para POS e terminais de pagamento
+├── observabilidade/           # Configurações de telemetria (Prometheus, Loki, Tempo, Alloy, Grafana)
+│   ├── prometheus/            # Coleta de métricas e alertas
+│   ├── loki/                  # Agregação centralizada de logs
+│   ├── tempo/                 # Tracing distribuído (OTLP)
+│   ├── alloy/                 # Grafana Alloy (coletor e forwarder de logs/traces)
+│   └── grafana/               # Dashboards e data sources provisionados
+├── docs/                      # Documentação técnica de arquitetura, segurança e contratos
+│   ├── ARCHITECTURE.md        # Detalhes de arquitetura hexagonal, jOOQ e concorrência
+│   ├── IAM.md                 # Especificação do IAM, contratos com pagamentos e endpoints
+│   └── SECURITY.md            # Práticas de segurança, Argon2id, JWT RS256 e auditoria
+├── k8s/                       # Manifestos e configurações Kubernetes
+├── cicd/                      # Pipelines de integração e entrega contínua
+│   └── jenkins/               # Jenkinsfiles e automações
+├── docker-compose.yml         # Orquestração local da infraestrutura e observabilidade
+├── .env.example               # Template de variáveis de ambiente
+├── .gitignore                 # Regras de exclusão do Git
+└── README.md                  # Este documento
+```
+
+---
+
+## 2. Tecnologias Principais
+
+- **Linguagem / Runtime**: Java 27 (OpenJDK)
+- **Framework Backend**: Quarkus 3.40
+- **Persistência & Acesso a Dados**:
+  - PostgreSQL 16 (JSONB, índices parciais e B-Tree)
+  - Flyway para controle de versão e migrações do banco
+  - jOOQ 3.19 (tipagem forte, `DDLDatabase` para geração estática sem banco ativo)
+  - *Zero ORM* (sem JPA/Hibernate)
+- **Criptografia & Segurança**:
+  - Argon2id via Bouncy Castle (64MB, 3 iterações, 4 threads)
+  - SmallRye JWT assinado com chaves assimétricas RSA 2048 (RS256)
+- **Cache & Idempotência**: Redis 7
+- **Observabilidade**: Grafana, Prometheus, Loki, Tempo, Alloy e Exporters
+
+---
+
+## 3. Módulo IAM (Identity and Access Management)
+
+O módulo **IAM** foi implementado com estrita observância das fronteiras de responsabilidade:
+- **Zero código de pagamentos**: Não foram criadas tabelas financeiras, integrações com PSPs ou fluxos de pagamento (responsabilidade futura da equipe de pagamentos).
+- **Multi-tenancy Nativo**: Isolamento completo por organização através do header `X-Tenant-ID`.
+- **Snowflake ID**: Identificadores numéricos `BIGINT` de 64 bits ordenáveis no tempo e distribuídos.
+- **RBAC Contextual**: Papéis e permissões granulares avaliados no escopo do tenant do usuário.
+- **Autenticação M2M**: Chaves de API (`X-API-Key`) indexadas por prefixo e segredo com hash SHA-256.
+- **Bootstrap Automático**: Carga idempotente no startup de permissões fundamentais, papéis do sistema (`master`, `admin`, `user`) e usuário administrador inicial.
+
+---
+
+## 4. Como Executar a Infraestrutura Local
+
+### 4.1 Pré-requisitos
+- Docker Engine e Docker Compose instalados
+- Java 27 (JDK) configurado no `JAVA_HOME`
+
+### 4.2 Subir os Containers de Infraestrutura e Observabilidade
+Execute na raiz do repositório:
+
+```bash
+# Copie o arquivo de variáveis de ambiente
+cp .env.example .env
+
+# Inicie o PostgreSQL, Redis, Kafka, RabbitMQ e a stack de observabilidade
+docker compose up -d
+```
+
+Serviços disponibilizados:
+- **PostgreSQL**: `localhost:5432` (db: `hermes_db`, user: `hermes_user`, pass: `hermes_pass`)
+- **Redis**: `localhost:6379`
+- **Kafka**: `localhost:9092`
+- **RabbitMQ Management**: `http://localhost:15672`
+- **Grafana**: `http://localhost:3000` (user: `admin`, pass: `admin`)
+- **Prometheus**: `http://localhost:9090`
+- **Jaeger UI**: `http://localhost:16686`
+
+---
+
+## 5. Compilação e Execução do Backend
+
+Entre no diretório da aplicação:
+
+```bash
+cd back/payment
+```
+
+### 5.1 Executar a Suíte de Testes Unitários
+```bash
+./mvnw clean test
+```
+
+### 5.2 Executar em Modo de Desenvolvimento (Live Reload)
+```bash
 ./mvnw quarkus:dev
 ```
 
-> **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at <http://localhost:8080/q/dev/>.
+A API estará disponível em `http://localhost:8080`.
 
-## Packaging and running the application
+---
 
-The application can be packaged using:
+## 6. Principais Endpoints da API REST
 
-```shell script
-./mvnw package
+Todos os endpoints retornam o formato uniforme `ResponseHTTP<T>`:
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "Operação realizada com sucesso",
+  "data": { ... },
+  "errors": [],
+  "timestamp": "2026-11-17T21:00:00Z"
+}
 ```
 
-It produces the `quarkus-run.jar` file in the `target/quarkus-app/` directory.
-Be aware that it’s not an _über-jar_ as the dependencies are copied into the `target/quarkus-app/lib/` directory.
+### 6.1 Autenticação e Registro
+- `POST /v1/auth/register`: Cadastro de novo usuário
+  ```bash
+  curl -X POST http://localhost:8080/v1/auth/register \
+    -H "Content-Type: application/json" \
+    -d '{
+      "email": "gestor@empresa.com.br",
+      "username": "gestor",
+      "password": "SenhaSegura123!",
+      "fullName": "Gestor da Empresa"
+    }'
+  ```
 
-The application is now runnable using `java -jar target/quarkus-app/quarkus-run.jar`.
+- `POST /v1/auth/login`: Autenticação com e-mail e senha
+  ```bash
+  curl -X POST http://localhost:8080/v1/auth/login \
+    -H "Content-Type: application/json" \
+    -d '{
+      "email": "admin@hermes.payment",
+      "password": "HermesMasterPassword2026!",
+      "tenantId": null
+    }'
+  ```
 
-If you want to build an _über-jar_, execute the following command:
+### 6.2 Organizações (Tenants)
+- `POST /v1/tenants`: Criação de uma organização (requer `Authorization: Bearer <token>`)
+  ```bash
+  curl -X POST http://localhost:8080/v1/tenants \
+    -H "Authorization: Bearer <TOKEN>" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "name": "Acme Pagamentos Ltda",
+      "slug": "acme-pagamentos",
+      "countryCode": "BR"
+    }'
+  ```
 
-```shell script
-./mvnw package -Dquarkus.package.jar.type=uber-jar
-```
+- `GET /v1/tenants`: Lista organizações vinculadas ao usuário autenticado
 
-The application, packaged as an _über-jar_, is now runnable using `java -jar target/*-runner.jar`.
+### 6.3 Chaves de API M2M
+- `POST /v1/api-keys`: Cria uma chave de API para integrações de backend
+  ```bash
+  curl -X POST http://localhost:8080/v1/api-keys \
+    -H "Authorization: Bearer <TOKEN>" \
+    -H "X-Tenant-ID: <TENANT_ID>" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "name": "E-Commerce Checkout Key",
+      "expiresInDays": 365,
+      "permissionIds": []
+    }'
+  ```
 
-## Creating a native executable
+---
 
-You can create a native executable using:
+## 7. Próximos Passos (Módulo de Pagamentos)
 
-```shell script
-./mvnw package -Dnative
-```
-
-Or, if you don't have GraalVM installed, you can run the native executable build in a container using:
-
-```shell script
-./mvnw package -Dnative -Dquarkus.native.container-build=true
-```
-
-You can then execute your native executable with: `./target/hermes-0.0.1-runner`
-
-If you want to learn more about building native executables, please consult <https://quarkus.io/guides/maven-tooling>.
-
-## Related Guides
-
-- Security WebAuthn ([guide](https://quarkus.io/guides/security-webauthn)): Secure your applications with WebAuthn
-- REST ([guide](https://quarkus.io/guides/rest)): Build RESTful web services and APIs using Jakarta REST (formerly JAX-RS)
-- Flyway ([guide](https://quarkus.io/guides/flyway)): Handle your database schema migrations
-- Qute ([guide](https://quarkus.io/guides/qute)): Offer templating support for web, email, etc in a build time, type-safe way
-- Messaging - Kafka Connector ([guide](https://quarkus.io/guides/kafka-getting-started)): Connect to Kafka with Reactive Messaging
-- SmallRye Fault Tolerance ([guide](https://quarkus.io/guides/smallrye-fault-tolerance)): Build fault-tolerant network services
-- Scheduler ([guide](https://quarkus.io/guides/scheduler)): Schedule recurring tasks and periodic jobs using cron expressions or fixed intervals
-- SmallRye JWT ([guide](https://quarkus.io/guides/security-jwt)): Secure your applications with JSON Web Token
-- JDBC Driver - PostgreSQL ([guide](https://quarkus.io/guides/datasource)): Connect to the PostgreSQL database via JDBC
-- SmallRye OpenAPI ([guide](https://quarkus.io/guides/openapi-swaggerui)): Generate OpenAPI schemas and serve Swagger UI for REST API documentation
-- REST Jackson ([guide](https://quarkus.io/guides/rest#json-serialisation)): Jackson serialization support for Quarkus REST. This extension is not compatible with the quarkus-resteasy extension, or any of the extensions that depend on it
-- OpenTelemetry ([guide](https://quarkus.io/guides/opentelemetry)): Use OpenTelemetry to trace services
-- Mailer ([guide](https://quarkus.io/guides/mailer)): Send emails
-- Info ([guide](https://quarkus.io/guides/info)): Expose the info endpoint
-- Java Flight Recorder (JFR) ([guide](https://quarkus.io/guides/jfr)): Monitor your applications with Java Flight Recorder
-- Logging JSON ([guide](https://quarkus.io/guides/logging#json-logging)): Add JSON formatter for console logging
-- Vault ([guide](https://quarkiverse.github.io/quarkiverse-docs/quarkus-vault/dev/index.html)): Store your credentials securely in HashiCorp Vault
-- SmallRye Health ([guide](https://quarkus.io/guides/smallrye-health)): Monitor service health
-- Micrometer Registry Prometheus ([guide](https://quarkus.io/guides/micrometer)): Enable Prometheus support for Micrometer
-- Messaging - RabbitMQ Connector ([guide](https://quarkus.io/guides/rabbitmq)): Connect to RabbitMQ with Reactive Messaging
-- Hibernate Validator ([guide](https://quarkus.io/guides/validation)): Bean validation using Hibernate Validator and Jakarta Validation annotations
-- OpenID Connect ([guide](https://quarkus.io/guides/security-openid-connect)): Secure applications with OpenID Connect and OAuth 2.0 using bearer tokens and authorization code flow
-- Redis Client ([guide](https://quarkus.io/guides/redis)): Connect to Redis in either imperative or reactive style
-- SmallRye JWT Build ([guide](https://quarkus.io/guides/security-jwt-build)): Create JSON Web Token with SmallRye JWT Build API
-- Amazon S3 ([guide](https://docs.quarkiverse.io/quarkus-amazon-services/dev/amazon-s3.html)): Connect to Amazon S3 cloud storage
-
-## Provided Code
-
-### gRPC
-
-Create your first gRPC service
-
-[Related guide section...](https://quarkus.io/guides/grpc-getting-started)
-
-### Messaging codestart
-
-Use Quarkus Messaging
-
-[Related Apache Kafka guide section...](https://quarkus.io/guides/kafka-reactive-getting-started)
-
-
-### REST
-
-Easily start your REST Web Services
-
-[Related guide section...](https://quarkus.io/guides/getting-started-reactive#reactive-jax-rs-resources)
-
-### SmallRye Health
-
-Monitor your application's health using SmallRye Health
-
-[Related guide section...](https://quarkus.io/guides/smallrye-health)
+Com o alicerce do IAM concluído e operacional, os desenvolvedores de pagamentos podem iniciar o desenvolvimento de:
+1. Modelo de dados de **Merchants** associados aos tenants do IAM (`tenant_id`).
+2. Endpoints de **Payment Intent** e processamento financeiro (PIX, Boleto, Cartão de Crédito).
+3. Integração com PSPs e Adquirentes.
+4. Regras de liquidação, conciliação e split de recebíveis.
