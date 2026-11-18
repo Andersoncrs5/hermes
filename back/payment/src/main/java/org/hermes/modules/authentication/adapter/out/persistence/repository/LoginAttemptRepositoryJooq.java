@@ -15,8 +15,12 @@ import java.util.List;
 @ApplicationScoped
 public class LoginAttemptRepositoryJooq implements LoginAttemptRepository {
 
-    private final DSLContext dsl;
-    private final SnowflakeIdGenerator idGenerator;
+    private DSLContext dsl;
+    private SnowflakeIdGenerator idGenerator;
+    public LoginAttemptRepositoryJooq() {
+        this.dsl = null;
+        this.idGenerator = null;
+    }
 
     @Inject
     public LoginAttemptRepositoryJooq(DSLContext dsl, SnowflakeIdGenerator idGenerator) {

@@ -18,7 +18,11 @@ import java.util.Optional;
 @ApplicationScoped
 public class UserTenantRoleRepositoryJooq extends GenericJooqRepository<UserTenantRoleEntity, UserTenantRolesRecord, Long> implements UserTenantRoleRepository {
 
-    private final SnowflakeIdGenerator idGenerator;
+    private SnowflakeIdGenerator idGenerator;
+    public UserTenantRoleRepositoryJooq() {
+        super();
+        this.idGenerator = null;
+    }
 
     @Inject
     public UserTenantRoleRepositoryJooq(DSLContext dsl, SnowflakeIdGenerator idGenerator) {

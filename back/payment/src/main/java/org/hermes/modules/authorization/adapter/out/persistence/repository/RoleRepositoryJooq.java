@@ -18,7 +18,11 @@ import java.util.Optional;
 @ApplicationScoped
 public class RoleRepositoryJooq extends GenericJooqRepository<RoleEntity, RolesRecord, Long> implements RoleRepository {
 
-    private final SnowflakeIdGenerator idGenerator;
+    private SnowflakeIdGenerator idGenerator;
+    public RoleRepositoryJooq() {
+        super();
+        this.idGenerator = null;
+    }
 
     @Inject
     public RoleRepositoryJooq(DSLContext dsl, SnowflakeIdGenerator idGenerator) {

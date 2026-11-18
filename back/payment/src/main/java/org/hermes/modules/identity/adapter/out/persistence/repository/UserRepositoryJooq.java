@@ -18,7 +18,11 @@ import java.util.Optional;
 @ApplicationScoped
 public class UserRepositoryJooq extends GenericJooqRepository<UserEntity, UsersRecord, Long> implements UserRepository {
 
-    private final SnowflakeIdGenerator idGenerator;
+    private SnowflakeIdGenerator idGenerator;
+    public UserRepositoryJooq() {
+        super();
+        this.idGenerator = null;
+    }
 
     @Inject
     public UserRepositoryJooq(DSLContext dsl, SnowflakeIdGenerator idGenerator) {

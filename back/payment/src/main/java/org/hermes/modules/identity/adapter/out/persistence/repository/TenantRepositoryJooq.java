@@ -17,7 +17,11 @@ import java.util.Optional;
 @ApplicationScoped
 public class TenantRepositoryJooq extends GenericJooqRepository<TenantEntity, TenantsRecord, Long> implements TenantRepository {
 
-    private final SnowflakeIdGenerator idGenerator;
+    private SnowflakeIdGenerator idGenerator;
+    public TenantRepositoryJooq() {
+        super();
+        this.idGenerator = null;
+    }
 
     @Inject
     public TenantRepositoryJooq(DSLContext dsl, SnowflakeIdGenerator idGenerator) {

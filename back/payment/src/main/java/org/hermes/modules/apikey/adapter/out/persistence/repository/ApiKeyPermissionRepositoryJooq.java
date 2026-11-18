@@ -17,7 +17,11 @@ import java.util.List;
 @ApplicationScoped
 public class ApiKeyPermissionRepositoryJooq extends GenericJooqRepository<ApiKeyPermissionEntity, ApiKeyPermissionsRecord, Long> implements ApiKeyPermissionRepository {
 
-    private final SnowflakeIdGenerator idGenerator;
+    private SnowflakeIdGenerator idGenerator;
+    public ApiKeyPermissionRepositoryJooq() {
+        super();
+        this.idGenerator = null;
+    }
 
     @Inject
     public ApiKeyPermissionRepositoryJooq(DSLContext dsl, SnowflakeIdGenerator idGenerator) {

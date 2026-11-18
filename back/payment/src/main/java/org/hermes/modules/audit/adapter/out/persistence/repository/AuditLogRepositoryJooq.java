@@ -16,8 +16,12 @@ import java.util.List;
 @ApplicationScoped
 public class AuditLogRepositoryJooq implements AuditLogRepository {
 
-    private final DSLContext dsl;
-    private final SnowflakeIdGenerator idGenerator;
+    private DSLContext dsl;
+    private SnowflakeIdGenerator idGenerator;
+    public AuditLogRepositoryJooq() {
+        this.dsl = null;
+        this.idGenerator = null;
+    }
 
     @Inject
     public AuditLogRepositoryJooq(DSLContext dsl, SnowflakeIdGenerator idGenerator) {

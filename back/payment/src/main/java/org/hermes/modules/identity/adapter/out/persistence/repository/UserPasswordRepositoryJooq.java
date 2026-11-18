@@ -17,7 +17,11 @@ import java.util.Optional;
 @ApplicationScoped
 public class UserPasswordRepositoryJooq extends GenericJooqRepository<UserPasswordEntity, UserPasswordsRecord, Long> implements UserPasswordRepository {
 
-    private final SnowflakeIdGenerator idGenerator;
+    private SnowflakeIdGenerator idGenerator;
+    public UserPasswordRepositoryJooq() {
+        super();
+        this.idGenerator = null;
+    }
 
     @Inject
     public UserPasswordRepositoryJooq(DSLContext dsl, SnowflakeIdGenerator idGenerator) {

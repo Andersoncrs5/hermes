@@ -17,7 +17,11 @@ import java.util.Optional;
 @ApplicationScoped
 public class RefreshTokenRepositoryJooq extends GenericJooqRepository<RefreshTokenEntity, RefreshTokensRecord, Long> implements RefreshTokenRepository {
 
-    private final SnowflakeIdGenerator idGenerator;
+    private SnowflakeIdGenerator idGenerator;
+    public RefreshTokenRepositoryJooq() {
+        super();
+        this.idGenerator = null;
+    }
 
     @Inject
     public RefreshTokenRepositoryJooq(DSLContext dsl, SnowflakeIdGenerator idGenerator) {

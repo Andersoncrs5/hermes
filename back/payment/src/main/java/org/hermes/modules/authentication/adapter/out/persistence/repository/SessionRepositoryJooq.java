@@ -17,7 +17,11 @@ import java.util.List;
 @ApplicationScoped
 public class SessionRepositoryJooq extends GenericJooqRepository<SessionEntity, SessionsRecord, Long> implements SessionRepository {
 
-    private final SnowflakeIdGenerator idGenerator;
+    private SnowflakeIdGenerator idGenerator;
+    public SessionRepositoryJooq() {
+        super();
+        this.idGenerator = null;
+    }
 
     @Inject
     public SessionRepositoryJooq(DSLContext dsl, SnowflakeIdGenerator idGenerator) {

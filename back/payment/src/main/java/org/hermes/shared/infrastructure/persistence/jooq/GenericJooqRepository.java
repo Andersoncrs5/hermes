@@ -15,13 +15,23 @@ import java.util.Optional;
 
 public abstract class GenericJooqRepository<T extends BaseEntity, R extends Record, ID> implements GenericRepository<T, ID> {
 
-    protected final DSLContext dsl;
-    protected final Table<R> table;
-    protected final Field<ID> idField;
-    protected final Field<Long> versionField;
-    protected final Field<OffsetDateTime> createdAtField;
-    protected final Field<OffsetDateTime> updatedAtField;
-    protected final Field<OffsetDateTime> deletedAtField;
+    protected DSLContext dsl;
+    protected Table<R> table;
+    protected Field<ID> idField;
+    protected Field<Long> versionField;
+    protected Field<OffsetDateTime> createdAtField;
+    protected Field<OffsetDateTime> updatedAtField;
+    protected Field<OffsetDateTime> deletedAtField;
+
+    public GenericJooqRepository() {
+        this.dsl = null;
+        this.table = null;
+        this.idField = null;
+        this.versionField = null;
+        this.createdAtField = null;
+        this.updatedAtField = null;
+        this.deletedAtField = null;
+    }
 
     protected GenericJooqRepository(
             DSLContext dsl,
